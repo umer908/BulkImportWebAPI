@@ -9,10 +9,11 @@ namespace Infrastructure.Database.Repository
     public class InsuranceRepository : IInsuranceRepository
     {
         private readonly DatabaseSettings _dbSettings;
-
-        public InsuranceRepository(DatabaseSettings dbSettings)
+        private readonly IErrorLoggerRepository _errorLoggerRepository;
+        public InsuranceRepository(DatabaseSettings dbSettings, IErrorLoggerRepository errorLoggerRepository)
         {
             _dbSettings = dbSettings;
+            _errorLoggerRepository = errorLoggerRepository; 
         }
 
         private IDbConnection Connection => new SqlConnection(
@@ -46,13 +47,14 @@ namespace Infrastructure.Database.Repository
                 }
                 catch (Exception ex)
                 {
-                    // Log error to error table
-                    response.Errors.Add(new ErrorResponse
+                    var errorLog = new ErrorResponse
                     {
                         OperationId = record.OperationId,
                         ErrorCode = "DB-INSERT",
                         ErrorMessage = ex.Message
-                    });
+                    };
+                    response.Errors.Add(errorLog);
+                    await _errorLoggerRepository.LogErrorAsync(errorLog);
                 }
             }
 
@@ -99,13 +101,14 @@ namespace Infrastructure.Database.Repository
                 }
                 catch (Exception ex)
                 {
-                    // Log error to error table
-                    response.Errors.Add(new ErrorResponse
+                    var errorLog = new ErrorResponse
                     {
                         OperationId = record.OperationId,
-                        ErrorCode = "DB-UPDATE",
+                        ErrorCode = "DB-INSERT",
                         ErrorMessage = ex.Message
-                    });
+                    };
+                    response.Errors.Add(errorLog);
+                    await _errorLoggerRepository.LogErrorAsync(errorLog);
                 }
             }
 

@@ -1,9 +1,11 @@
 ﻿using Application.Domain;
 using Application.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebCHINotifyAI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class InsuranceController : ControllerBase
