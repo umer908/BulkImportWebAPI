@@ -12,12 +12,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 var dbSettings = builder.Configuration.GetSection("Database").Get<DatabaseSettings>()!;
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
+var fileSettings = builder.Configuration.GetSection("FileStorage").Get<FileStorageSettings>()!;
 
 builder.Services.AddScoped<IInsuranceRepository, InsuranceRepository>();
 builder.Services.AddScoped<IAuthenticateUserRepository, AuthenticateUserRepository>();
 builder.Services.AddScoped<IErrorLoggerRepository, ErrorLoggerRepository>();
 builder.Services.AddSingleton(dbSettings);
 builder.Services.AddSingleton(jwtSettings);
+builder.Services.AddSingleton(fileSettings);
 
 builder.Services.AddAuthentication(options =>
 {

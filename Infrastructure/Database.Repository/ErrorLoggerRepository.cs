@@ -3,16 +3,18 @@ using System.Data.SqlClient;
 using System.Data;
 using Application.Interface;
 using Dapper;
+using System.Text.Json;
 
 namespace Infrastructure.Database.Repository
 {
     public class ErrorLoggerRepository : IErrorLoggerRepository
     {
         private readonly DatabaseSettings _dbSettings;
-
-        public ErrorLoggerRepository(DatabaseSettings dbSettings)
+        private readonly FileStorageSettings _fileSettings;
+        public ErrorLoggerRepository(DatabaseSettings dbSettings, FileStorageSettings fileSettings)
         {
             _dbSettings = dbSettings;
+            _fileSettings = fileSettings;
         }
 
         private IDbConnection Connection => new SqlConnection(
@@ -35,5 +37,44 @@ namespace Infrastructure.Database.Repository
             });
         }
 
+        public async Task LogRequestBatchAsync(Guid batchId, object payload)
+        {
+            string jsonPayload = JsonSerializer.Serialize(payload);
+            const string query = @"
+            INSERT INTO ActivityLogs (BatchId, Payload, CreatedAt)
+            VALUES (@BatchId, @Payload, @CreatedAt)";
+
+            using var connection = Connection;
+            try
+            {
+                await connection.ExecuteAsync(query, new
+                {
+                    BatchId = batchId,
+                    Payload = jsonPayload,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            catch (Exception)
+            {
+                SaveActivityToFile(batchId, jsonPayload);
+            }
+        }
+
+        private void SaveActivityToFile(Guid batchId, string jsonPayload)
+        {
+            try
+            {
+                if (!Directory.Exists(_fileSettings.BatchPath))
+                    Directory.CreateDirectory(_fileSettings.BatchPath);
+
+                string filePath = Path.Combine(_fileSettings.BatchPath, $"{batchId}.json");
+                File.WriteAllText(filePath, jsonPayload);
+            }
+            catch (Exception ex)
+            {
+              
+                Console.WriteLine($"Failed to save activity log to file: {ex.Message}");
+            }
+        }
     }
 }

@@ -22,6 +22,9 @@ namespace Infrastructure.Database.Repository
 
         public async Task<MethodResult> InsertInsuranceRecordsAsync(IEnumerable<InsurancePolicy> records)
         {
+            Guid batchId = Guid.NewGuid();
+            await _errorLoggerRepository.LogRequestBatchAsync(batchId, records);
+
             const string query = @"
             INSERT INTO InsurancePolicies 
             (OperationId, UnifiedNationalNumber, PolicyIssueDate, PolicyExpiryDate, PolicyNumber, 
