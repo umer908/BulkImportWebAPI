@@ -37,17 +37,17 @@ namespace Infrastructure.Database.Repository
             });
         }
 
-        public async Task LogRequestBatchAsync(Guid batchId, object payload)
+        public void LogRequestBatch(Guid batchId, object payload)
         {
             string jsonPayload = JsonSerializer.Serialize(payload);
             const string query = @"
-            INSERT INTO ActivityLogs (BatchId, Payload, CreatedAt)
+            INSERT INTO RequestBatch (BatchId, Payload, CreatedAt)
             VALUES (@BatchId, @Payload, @CreatedAt)";
 
             using var connection = Connection;
             try
             {
-                await connection.ExecuteAsync(query, new
+                var result = connection.Execute(query, new
                 {
                     BatchId = batchId,
                     Payload = jsonPayload,
